@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -11,7 +12,7 @@ import { Badge } from "./ui/badge";
 type EventCardProps = {
   event: CampusEvent;
   view: "student" | "hod";
-  onRegister?: (eventId: string) => void;
+  onRegister?: () => void;
   isRegistered?: boolean;
   registrationCount?: number;
 };
@@ -52,7 +53,7 @@ export function EventCard({ event, view, onRegister, isRegistered, registrationC
       <CardFooter className="bg-secondary/30 p-4">
         {view === "student" && onRegister && (
           <Button
-            onClick={() => onRegister(event.id)}
+            onClick={onRegister}
             disabled={isRegistered}
             className="w-full"
             variant={isRegistered ? "secondary" : "default"}

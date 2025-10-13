@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { RegistrationForm } from "@/components/registration-form";
 
 export default function StudentPage() {
   const params = useParams();
@@ -27,28 +28,35 @@ export default function StudentPage() {
   const [registrations, setRegistrations] = useLocalStorage<Registration[]>("campus-connect-registrations", []);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date");
+  const [selectedEvent, setSelectedEvent] = useState<CampusEvent | null>(null);
 
+  const handleRegister = (details: Omit<Registration, 'studentName' | 'eventId'>) => {
+    if (!selectedEvent) return;
 
-  const handleRegister = (eventId: string, eventTitle: string) => {
-    if (registrations.some(r => r.studentName === studentName && r.eventId === eventId)) {
+    if (registrations.some(r => r.studentName === studentName && r.eventId === selectedEvent.id)) {
       toast({
         title: "Already Registered",
-        description: `You are already registered for ${eventTitle}.`,
+        description: `You are already registered for ${selectedEvent.title}.`,
         variant: "default",
       });
       return;
     }
 
-    setRegistrations(prev => [...prev, { studentName, eventId }]);
+    setRegistrations(prev => [...prev, { ...details, studentName, eventId: selectedEvent.id }]);
     toast({
       title: "Registration Successful!",
-      description: `You have registered for ${eventTitle}.`,
+      description: `You have registered for ${selectedEvent.title}.`,
       action: <CheckCircle className="text-green-500" />,
     });
+    setSelectedEvent(null);
   };
 
   const getIsRegistered = (eventId: string) => {
     return registrations.some(r => r.studentName === studentName && r.eventId === eventId);
+  };
+
+  const openRegistrationForm = (event: CampusEvent) => {
+    setSelectedEvent(event);
   };
 
   const filteredAndSortedEvents = events
@@ -97,7 +105,7 @@ export default function StudentPage() {
                 key={event.id}
                 event={event}
                 view="student"
-                onRegister={() => handleRegister(event.id, event.title)}
+                onRegister={() => openRegistrationForm(event)}
                 isRegistered={getIsRegistered(event.id)}
               />
             ))}
@@ -109,6 +117,14 @@ export default function StudentPage() {
           </div>
         )}
       </main>
+      
+      <RegistrationForm
+        isOpen={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onSubmit={handleRegister}
+        eventName={selectedEvent?.title}
+        studentName={decodeURIComponent(studentName)}
+      />
     </div>
   );
 }
