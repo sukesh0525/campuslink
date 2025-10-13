@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -13,19 +14,32 @@ import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const studentSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
 });
 
+const hodDepartments = {
+  "CSE": "CSE-HOD-7G4K2M9Q1",
+  "CSM": "CSM-HOD-7C4K2M9Q1",
+  "ECE": "ECE-HOD-B8T5Z3R6L",
+  "MECH": "MECH-HOD-P0X9V7S4D",
+  "CIVIL": "CIVIL-HOD-M3C6Y2N8J",
+  "IT": "IT-HOD-R5Q1H8F2W",
+  "EEE": "EEE-HOD-L2V7K9B4S",
+};
+
 const hodSchema = z.object({
-  department: z.string().min(3, { message: "Department must be at least 3 characters." }),
+  department: z.string({ required_error: "Please select a department." }),
+  code: z.string().min(1, { message: "Please enter the access code." }),
 });
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-students');
-
 
   const studentForm = useForm<z.infer<typeof studentSchema>>({
     resolver: zodResolver(studentSchema),
@@ -34,7 +48,6 @@ export default function LoginPage() {
 
   const hodForm = useForm<z.infer<typeof hodSchema>>({
     resolver: zodResolver(hodSchema),
-    defaultValues: { department: "" },
   });
 
   function onStudentLogin(values: z.infer<typeof studentSchema>) {
@@ -42,7 +55,17 @@ export default function LoginPage() {
   }
 
   function onHodLogin(values: z.infer<typeof hodSchema>) {
-    router.push(`/hod/${values.department}`);
+    const expectedCode = hodDepartments[values.department as keyof typeof hodDepartments];
+    if (values.code === expectedCode) {
+      router.push(`/hod/${values.department}`);
+    } else {
+      hodForm.setError("code", { type: "manual", message: "Invalid access code for the selected department." });
+      toast({
+        title: "Login Failed",
+        description: "The access code is incorrect. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -130,7 +153,7 @@ export default function LoginPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>HOD Login</CardTitle>
-                  <CardDescription>Enter your department to manage events.</CardDescription>
+                  <CardDescription>Select your department and enter the access code.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Form {...hodForm}>
@@ -140,9 +163,31 @@ export default function LoginPage() {
                         name="department"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Department Name</FormLabel>
+                            <FormLabel>Department</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select your department" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.keys(hodDepartments).map(dept => (
+                                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={hodForm.control}
+                        name="code"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Access Code</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Computer Science" {...field} />
+                              <Input type="password" placeholder="Enter your code" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
