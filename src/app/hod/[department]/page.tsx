@@ -5,7 +5,7 @@ import { CampusEvent, Registration } from "@/lib/types";
 import { useParams } from "next/navigation";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Search, Users, Calendar, BarChart } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,13 +14,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Header } from "@/components/header";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 
-// In a real app, 'uuid' would be added to package.json, but for now a simple generator is fine.
-const uuidv4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-  const r = Math.random() * 16 | 0;
-  const v = c === 'x' ? r : (r & 0x3 | 0x8);
-  return v.toString(16);
-});
 
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -37,12 +33,13 @@ export default function HodPage() {
   
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
-    defaultValues: { title: "", date: "" },
+    defaultValues: { title: "", date: new Date().toISOString().split('T')[0] },
   });
 
   const handleProposeEvent = (values: z.infer<typeof eventSchema>) => {
     const newEvent: CampusEvent = {
-      id: uuidv4(),
+      // A simple id generator for the example
+      id: Math.random().toString(36).substring(2),
       title: values.title,
       department: departmentName,
       date: new Date(values.date).toISOString(),
@@ -58,12 +55,83 @@ export default function HodPage() {
     return registrations.filter(r => r.eventId === eventId).length;
   };
   
+  const totalRegistrations = departmentEvents.reduce((acc, event) => acc + getRegistrationCount(event.id), 0);
+
+  const chartData = departmentEvents.map(event => ({
+    name: event.title.length > 15 ? `${event.title.substring(0, 15)}...` : event.title,
+    registrations: getRegistrationCount(event.id),
+  }));
+
   return (
     <div className="min-h-screen bg-background">
       <Header title={departmentName} subtitle="HOD" />
       <main className="container mx-auto px-4 py-8 md:px-6">
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="font-headline text-3xl font-bold text-foreground">Your Department's Events</h2>
+          <h1 className="font-headline text-3xl font-bold text-foreground">Dashboard</h1>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{departmentEvents.length}</div>
+                    <p className="text-xs text-muted-foreground">Events created by your department</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalRegistrations}</div>
+                    <p className="text-xs text-muted-foreground">Across all your department's events</p>
+                </CardContent>
+            </Card>
+             <Card className="lg:col-span-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Top Event</CardTitle>
+                    <BarChart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">
+                        {chartData.length > 0 ? chartData.reduce((prev, current) => (prev.registrations > current.registrations) ? prev : current).name : 'N/A'}
+                    </div>
+                     <p className="text-xs text-muted-foreground">
+                        {chartData.length > 0 ? `${Math.max(...chartData.map(d => d.registrations))} registrations` : 'No events yet'}
+                     </p>
+                </CardContent>
+            </Card>
+        </div>
+        
+        {chartData.length > 0 && (
+            <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle>Event Registration Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    <ResponsiveContainer width="100%" height={350}>
+                        <RechartsBarChart data={chartData}>
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    borderColor: 'hsl(var(--border))'
+                                }}
+                            />
+                            <Bar dataKey="registrations" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </RechartsBarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        )}
+
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="font-headline text-2xl font-bold text-foreground">Your Department's Events</h2>
           <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -121,8 +189,11 @@ export default function HodPage() {
             ))}
           </div>
         ) : (
-          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border bg-card">
-            <p className="text-muted-foreground">You have not proposed any events yet.</p>
+          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border bg-card/50">
+            <div className="text-center">
+              <p className="text-lg font-medium text-muted-foreground">You have not proposed any events yet.</p>
+              <p className="text-sm text-muted-foreground">Click "Propose New Event" to get started.</p>
+            </div>
           </div>
         )}
       </main>
