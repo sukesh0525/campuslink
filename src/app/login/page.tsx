@@ -48,6 +48,7 @@ export default function LoginPage() {
 
   const hodForm = useForm<z.infer<typeof hodSchema>>({
     resolver: zodResolver(hodSchema),
+    defaultValues: { department: "", code: "" },
   });
 
   function onStudentLogin(values: z.infer<typeof studentSchema>) {
