@@ -14,7 +14,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Header } from "@/components/header";
 import { useState } from "react";
-import { v4 as uuidv4 } from 'uuid'; // Simple UUID generation
+
+// In a real app, 'uuid' would be added to package.json, but for now a simple generator is fine.
+const uuidv4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const r = Math.random() * 16 | 0;
+  const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return v.toString(16);
+});
 
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -123,15 +129,3 @@ export default function HodPage() {
     </div>
   );
 }
-
-// Dummy uuidv4 implementation if 'uuid' package is not installed (as per instructions)
-// In a real app, 'uuid' would be added to package.json
-if (typeof window !== 'undefined' && !('uuidv4' in window)) {
-    (window as any).uuidv4 = function() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-}
-const uuidv4 = typeof window !== 'undefined' ? (window as any).uuidv4 : () => Math.random().toString(36).substring(2);
