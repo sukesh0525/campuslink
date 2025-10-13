@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-students",
+      "description": "A group of diverse students collaborating and smiling on a university campus.",
+      "imageUrl": "https://picsum.photos/seed/campus/1200/600",
+      "imageHint": "students collaborating"
+    },
+    {
+      "id": "event-default",
+      "description": "A generic event image showing a conference room or a gathering.",
+      "imageUrl": "https://picsum.photos/seed/event/400/250",
+      "imageHint": "event gathering"
+    }
+  ]
 }
