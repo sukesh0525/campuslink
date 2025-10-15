@@ -4,6 +4,7 @@ export interface CampusEvent {
   title: string;
   department: string;
   date: string;
+  imageUrl?: string;
 }
 
 export interface Registration {

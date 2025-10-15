@@ -19,20 +19,19 @@ type EventCardProps = {
 
 export function EventCard({ event, view, onRegister, isRegistered, registrationCount, onViewRegistrations }: EventCardProps) {
   const eventImage = PlaceHolderImages.find((img) => img.id === 'event-default');
+  const imageUrl = event.imageUrl || `${eventImage?.imageUrl}&t=${event.id}`;
 
   return (
     <Card className="group flex flex-col overflow-hidden border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
       <div className="overflow-hidden relative">
-          {eventImage && (
-              <Image
-                src={`${eventImage.imageUrl}&t=${event.id}`} // Add event id to seed for unique images
-                alt={event.title}
-                width={400}
-                height={250}
-                className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={eventImage.imageHint}
-              />
-          )}
+          <Image
+            src={imageUrl}
+            alt={event.title}
+            width={400}
+            height={250}
+            className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            data-ai-hint={event.imageUrl ? "custom event image" : eventImage?.imageHint}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
       </div>
       <CardHeader className="relative z-10 -mt-12 p-4">

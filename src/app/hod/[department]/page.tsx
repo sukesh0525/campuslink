@@ -5,7 +5,7 @@ import { CampusEvent, Registration } from "@/lib/types";
 import { useParams } from "next/navigation";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, Calendar, BarChart } from "lucide-react";
+import { PlusCircle, Users, Calendar, BarChart, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,7 @@ import { RegistrationsList } from "@/components/registrations-list";
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
   date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format." }),
+  image: z.any().optional(),
 });
 
 export default function HodPage() {
@@ -38,16 +39,30 @@ export default function HodPage() {
   });
 
   const handleProposeEvent = (values: z.infer<typeof eventSchema>) => {
-    const newEvent: CampusEvent = {
-      // A simple id generator for the example
-      id: Math.random().toString(36).substring(2),
-      title: values.title,
-      department: departmentName,
-      date: new Date(values.date).toISOString(),
-    };
-    setEvents(prev => [...prev, newEvent]);
-    form.reset();
-    setProposeDialogOpen(false);
+    const reader = new FileReader();
+    const imageFile = values.image?.[0];
+
+    const createEvent = (imageUrl?: string) => {
+        const newEvent: CampusEvent = {
+            id: Math.random().toString(36).substring(2),
+            title: values.title,
+            department: departmentName,
+            date: new Date(values.date).toISOString(),
+            imageUrl,
+        };
+        setEvents(prev => [...prev, newEvent]);
+        form.reset();
+        setProposeDialogOpen(false);
+    }
+    
+    if (imageFile) {
+        reader.onload = (e) => {
+            createEvent(e.target?.result as string);
+        };
+        reader.readAsDataURL(imageFile);
+    } else {
+        createEvent();
+    }
   };
   
   const departmentEvents = events.filter(e => e.department === departmentName);
@@ -168,6 +183,28 @@ export default function HodPage() {
                       <FormItem>
                         <FormLabel>Event Date</FormLabel>
                         <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field: { onChange, value, ...rest } }) => (
+                      <FormItem>
+                        <FormLabel>Event Image</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              className="w-full pl-12"
+                              onChange={(e) => onChange(e.target.files)}
+                              {...rest}
+                            />
+                             <Upload className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                          </div>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
