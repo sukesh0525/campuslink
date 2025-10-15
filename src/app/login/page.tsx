@@ -53,17 +53,51 @@ export default function LoginPage() {
   });
 
   function onStudentLogin(values: z.infer<typeof studentLoginSchema>) {
-    if (values.email === "23KN1A42H9@gmail.com" && values.password === "NRIH9") {
-      const name = values.email.split('@')[0];
-      router.push(`/student/${name}`);
+    const { email, password } = values;
+    const username = email.split('@')[0].toUpperCase();
+    const expectedPrefix = "23KN1A42";
+    const validLetters = "DEFGHIJ";
+
+    if (!username.startsWith(expectedPrefix) || username.length !== expectedPrefix.length + 2) {
+      failLogin();
+      return;
+    }
+
+    const lastTwo = username.slice(-2);
+    const letter = lastTwo[0];
+    const number = parseInt(lastTwo[1], 10);
+    
+    if (isNaN(number) || !validLetters.includes(letter)) {
+       failLogin();
+       return;
+    }
+
+    // Define valid ranges
+    const isValidRange = 
+        (letter === 'D' && number >= 3 && number <= 9) ||
+        (letter === 'E' && number >= 0 && number <= 9) ||
+        (letter === 'F' && number >= 0 && number <= 9) ||
+        (letter === 'G' && number >= 0 && number <= 9) ||
+        (letter === 'H' && number >= 0 && number <= 9) ||
+        (letter === 'I' && number >= 0 && number <= 9) ||
+        (letter === 'J' && number >= 0 && number <= 7);
+
+    const expectedPassword = `NRI${lastTwo}`;
+
+    if (isValidRange && password.toUpperCase() === expectedPassword) {
+      router.push(`/student/${encodeURIComponent(email)}`);
     } else {
+      failLogin();
+    }
+  }
+
+  function failLogin() {
       studentForm.setError("password", { type: "manual", message: "Invalid email or password." });
        toast({
         title: "Login Failed",
         description: "Invalid email or password. Please try again.",
         variant: "destructive",
       });
-    }
   }
 
   function onHodLogin(values: z.infer<typeof hodSchema>) {
@@ -248,4 +282,3 @@ export default function LoginPage() {
       </div>
     </main>
   );
-}

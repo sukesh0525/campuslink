@@ -21,8 +21,9 @@ import { RegistrationForm } from "@/components/registration-form";
 
 export default function StudentPage() {
   const params = useParams();
-  const studentEmail = Array.isArray(params.name) ? params.name[0] : params.name;
-  const studentName = decodeURIComponent(studentEmail).split('@')[0];
+  const studentEmailParam = Array.isArray(params.name) ? params.name[0] : params.name;
+  const studentEmail = decodeURIComponent(studentEmailParam);
+  const studentName = studentEmail.split('@')[0];
   const { toast } = useToast();
 
   const [events] = useLocalStorage<CampusEvent[]>("campus-connect-events", []);
@@ -53,7 +54,7 @@ export default function StudentPage() {
   };
 
   const getIsRegistered = (eventId: string) => {
-    return registrations.some(r => r.email === decodeURIComponent(studentEmail) && r.eventId === eventId);
+    return registrations.some(r => r.email === studentEmail && r.eventId === eventId);
   };
 
   const openRegistrationForm = (event: CampusEvent) => {
@@ -125,8 +126,7 @@ export default function StudentPage() {
         onSubmit={handleRegister}
         eventName={selectedEvent?.title}
         studentName={studentName}
-        studentEmail={decodeURIComponent(studentEmail)}
+        studentEmail={studentEmail}
       />
     </div>
   );
-}
