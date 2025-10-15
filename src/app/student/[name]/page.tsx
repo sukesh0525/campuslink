@@ -21,7 +21,8 @@ import { RegistrationForm } from "@/components/registration-form";
 
 export default function StudentPage() {
   const params = useParams();
-  const studentName = Array.isArray(params.name) ? params.name[0] : params.name;
+  const studentEmail = Array.isArray(params.name) ? params.name[0] : params.name;
+  const studentName = decodeURIComponent(studentEmail).split('@')[0];
   const { toast } = useToast();
 
   const [events] = useLocalStorage<CampusEvent[]>("campus-connect-events", []);
@@ -30,10 +31,10 @@ export default function StudentPage() {
   const [sortBy, setSortBy] = useState("date");
   const [selectedEvent, setSelectedEvent] = useState<CampusEvent | null>(null);
 
-  const handleRegister = (details: Omit<Registration, 'studentName' | 'eventId'>) => {
+  const handleRegister = (details: Omit<Registration, 'eventId'>) => {
     if (!selectedEvent) return;
 
-    if (registrations.some(r => r.studentName === studentName && r.eventId === selectedEvent.id)) {
+    if (registrations.some(r => r.email === details.email && r.eventId === selectedEvent.id)) {
       toast({
         title: "Already Registered",
         description: `You are already registered for ${selectedEvent.title}.`,
@@ -42,7 +43,7 @@ export default function StudentPage() {
       return;
     }
 
-    setRegistrations(prev => [...prev, { ...details, studentName, eventId: selectedEvent.id }]);
+    setRegistrations(prev => [...prev, { ...details, eventId: selectedEvent.id }]);
     toast({
       title: "Registration Successful!",
       description: `You have registered for ${selectedEvent.title}.`,
@@ -52,7 +53,7 @@ export default function StudentPage() {
   };
 
   const getIsRegistered = (eventId: string) => {
-    return registrations.some(r => r.studentName === studentName && r.eventId === eventId);
+    return registrations.some(r => r.email === decodeURIComponent(studentEmail) && r.eventId === eventId);
   };
 
   const openRegistrationForm = (event: CampusEvent) => {
@@ -73,7 +74,7 @@ export default function StudentPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header title={decodeURIComponent(studentName)} subtitle="Student" />
+      <Header title={studentName} subtitle="Student" />
       <main className="container mx-auto px-4 py-8 md:px-6">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 className="font-headline text-3xl font-bold tracking-tight">Available Events</h2>
@@ -123,7 +124,8 @@ export default function StudentPage() {
         onClose={() => setSelectedEvent(null)}
         onSubmit={handleRegister}
         eventName={selectedEvent?.title}
-        studentName={decodeURIComponent(studentName)}
+        studentName={studentName}
+        studentEmail={decodeURIComponent(studentEmail)}
       />
     </div>
   );

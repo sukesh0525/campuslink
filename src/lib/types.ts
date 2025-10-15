@@ -7,8 +7,12 @@ export interface CampusEvent {
 }
 
 export interface Registration {
-  studentName: string;
+  studentName: string; // Full Name
   email: string;
-  department: string;
+  phone: string;
+  rollNo: string;
+  year: string;
+  department: string; // Branch
+  section: string;
   eventId: string;
 }
