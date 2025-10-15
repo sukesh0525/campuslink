@@ -17,8 +17,9 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
-const studentSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+const studentLoginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email." }),
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
 const hodDepartments = {
@@ -41,9 +42,9 @@ export default function LoginPage() {
   const { toast } = useToast();
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-students');
 
-  const studentForm = useForm<z.infer<typeof studentSchema>>({
-    resolver: zodResolver(studentSchema),
-    defaultValues: { name: "" },
+  const studentForm = useForm<z.infer<typeof studentLoginSchema>>({
+    resolver: zodResolver(studentLoginSchema),
+    defaultValues: { email: "", password: "" },
   });
 
   const hodForm = useForm<z.infer<typeof hodSchema>>({
@@ -51,8 +52,18 @@ export default function LoginPage() {
     defaultValues: { department: "", code: "" },
   });
 
-  function onStudentLogin(values: z.infer<typeof studentSchema>) {
-    router.push(`/student/${values.name}`);
+  function onStudentLogin(values: z.infer<typeof studentLoginSchema>) {
+    if (values.email === "23KN1A42H9@gmail.com" && values.password === "NRIH9") {
+      const name = values.email.split('@')[0];
+      router.push(`/student/${name}`);
+    } else {
+      studentForm.setError("password", { type: "manual", message: "Invalid email or password." });
+       toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   function onHodLogin(values: z.infer<typeof hodSchema>) {
@@ -124,19 +135,32 @@ export default function LoginPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Student Login</CardTitle>
-                  <CardDescription>Enter your name to view and register for events.</CardDescription>
+                  <CardDescription>Enter your email and password to access your dashboard.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Form {...studentForm}>
                     <form onSubmit={studentForm.handleSubmit(onStudentLogin)} className="space-y-6">
                       <FormField
                         control={studentForm.control}
-                        name="name"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Name</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. John Doe" {...field} />
+                              <Input placeholder="you@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={studentForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
