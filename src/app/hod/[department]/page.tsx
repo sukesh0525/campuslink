@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 import { RegistrationsList } from "@/components/registrations-list";
+import { useToast } from "@/hooks/use-toast";
 
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -29,9 +30,10 @@ export default function HodPage() {
   const departmentName = decodeURIComponent(Array.isArray(params.department) ? params.department[0] : params.department);
   const [isProposeDialogOpen, setProposeDialogOpen] = useState(false);
   const [viewingRegistrationsFor, setViewingRegistrationsFor] = useState<CampusEvent | null>(null);
+  const { toast } = useToast();
 
   const [events, setEvents] = useLocalStorage<CampusEvent[]>("campus-connect-events", []);
-  const [registrations] = useLocalStorage<Registration[]>("campus-connect-registrations", []);
+  const [registrations, setRegistrations] = useLocalStorage<Registration[]>("campus-connect-registrations", []);
   
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
@@ -53,6 +55,10 @@ export default function HodPage() {
         setEvents(prev => [...prev, newEvent]);
         form.reset();
         setProposeDialogOpen(false);
+        toast({
+            title: "Event Proposed!",
+            description: `${newEvent.title} has been successfully created.`,
+        });
     }
     
     if (imageFile) {
@@ -63,6 +69,20 @@ export default function HodPage() {
     } else {
         createEvent();
     }
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    const eventToDelete = events.find(e => e.id === eventId);
+    if (!eventToDelete) return;
+
+    setEvents(prev => prev.filter(event => event.id !== eventId));
+    setRegistrations(prev => prev.filter(reg => reg.eventId !== eventId));
+
+    toast({
+        title: "Event Deleted",
+        description: `${eventToDelete.title} and all its registrations have been removed.`,
+        variant: "destructive",
+    });
   };
   
   const departmentEvents = events.filter(e => e.department === departmentName);
@@ -228,6 +248,7 @@ export default function HodPage() {
                 view="hod"
                 registrationCount={getRegistrationsForEvent(event.id).length}
                 onViewRegistrations={() => setViewingRegistrationsFor(event)}
+                onDelete={() => handleDeleteEvent(event.id)}
               />
             ))}
           </div>
