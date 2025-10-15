@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -17,6 +18,11 @@ import {
 } from "@/components/ui/table";
 import { Registration } from "@/lib/types";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button";
+import { Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from 'jspdf-autotable';
+import { DialogClose } from "@radix-ui/react-dialog";
 
 interface RegistrationsListProps {
   isOpen: boolean;
@@ -31,6 +37,37 @@ export function RegistrationsList({
   eventName,
   registrations,
 }: RegistrationsListProps) {
+
+  const handleDownloadPdf = () => {
+    if (!eventName) return;
+    
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text(`Registrations for: ${eventName}`, 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Total registrations: ${registrations.length}`, 14, 30);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [['Name', 'Roll No', 'Email', 'Phone', 'Year', 'Branch', 'Section']],
+      body: registrations.map(reg => [
+        reg.studentName,
+        reg.rollNo,
+        reg.email,
+        reg.phone,
+        reg.year,
+        reg.department,
+        reg.section,
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [22, 163, 74] },
+    });
+
+    doc.save(`${eventName.replace(/\s+/g, '_')}_registrations.pdf`);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl">
@@ -81,6 +118,19 @@ export function RegistrationsList({
             </Table>
           </div>
         </ScrollArea>
+        <DialogFooter className="sm:justify-between mt-4">
+             <Button 
+                onClick={handleDownloadPdf} 
+                disabled={registrations.length === 0}
+                variant="outline"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download as PDF
+            </Button>
+            <DialogClose asChild>
+                <Button type="button" variant="secondary">Close</Button>
+            </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
