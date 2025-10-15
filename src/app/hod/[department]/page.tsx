@@ -5,7 +5,7 @@ import { CampusEvent, Registration } from "@/lib/types";
 import { useParams } from "next/navigation";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Users, Calendar, BarChart } from "lucide-react";
+import { PlusCircle, Users, Calendar, BarChart } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import { Header } from "@/components/header";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Bar } from 'recharts';
-
+import { RegistrationsList } from "@/components/registrations-list";
 
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -26,7 +26,8 @@ const eventSchema = z.object({
 export default function HodPage() {
   const params = useParams();
   const departmentName = decodeURIComponent(Array.isArray(params.department) ? params.department[0] : params.department);
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isProposeDialogOpen, setProposeDialogOpen] = useState(false);
+  const [viewingRegistrationsFor, setViewingRegistrationsFor] = useState<CampusEvent | null>(null);
 
   const [events, setEvents] = useLocalStorage<CampusEvent[]>("campus-connect-events", []);
   const [registrations] = useLocalStorage<Registration[]>("campus-connect-registrations", []);
@@ -46,21 +47,25 @@ export default function HodPage() {
     };
     setEvents(prev => [...prev, newEvent]);
     form.reset();
-    setDialogOpen(false);
+    setProposeDialogOpen(false);
   };
   
   const departmentEvents = events.filter(e => e.department === departmentName);
 
-  const getRegistrationCount = (eventId: string) => {
-    return registrations.filter(r => r.eventId === eventId).length;
+  const getRegistrationsForEvent = (eventId: string) => {
+    return registrations.filter(r => r.eventId === eventId);
   };
   
-  const totalRegistrations = departmentEvents.reduce((acc, event) => acc + getRegistrationCount(event.id), 0);
+  const totalRegistrations = departmentEvents.reduce((acc, event) => acc + getRegistrationsForEvent(event.id).length, 0);
 
   const chartData = departmentEvents.map(event => ({
     name: event.title.length > 15 ? `${event.title.substring(0, 15)}...` : event.title,
-    registrations: getRegistrationCount(event.id),
+    registrations: getRegistrationsForEvent(event.id).length,
   }));
+
+  const registrationsForSelectedEvent = viewingRegistrationsFor
+    ? getRegistrationsForEvent(viewingRegistrationsFor.id)
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +137,7 @@ export default function HodPage() {
 
         <div className="mb-8 flex items-center justify-between">
           <h2 className="font-headline text-2xl font-bold text-foreground">Your Department's Events</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={isProposeDialogOpen} onOpenChange={setProposeDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Propose New Event
@@ -184,7 +189,8 @@ export default function HodPage() {
                 key={event.id}
                 event={event}
                 view="hod"
-                registrationCount={getRegistrationCount(event.id)}
+                registrationCount={getRegistrationsForEvent(event.id).length}
+                onViewRegistrations={() => setViewingRegistrationsFor(event)}
               />
             ))}
           </div>
@@ -197,6 +203,13 @@ export default function HodPage() {
           </div>
         )}
       </main>
+
+       <RegistrationsList
+        isOpen={!!viewingRegistrationsFor}
+        onClose={() => setViewingRegistrationsFor(null)}
+        eventName={viewingRegistrationsFor?.title}
+        registrations={registrationsForSelectedEvent}
+      />
     </div>
   );
 }

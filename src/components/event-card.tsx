@@ -1,11 +1,10 @@
-
 "use client";
 
 import Image from "next/image";
 import { CampusEvent } from "@/lib/types";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Building, Users, CheckCircle, ArrowRight } from "lucide-react";
+import { Calendar, Building, Users, CheckCircle, ArrowRight, Eye } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Badge } from "./ui/badge";
 
@@ -15,9 +14,10 @@ type EventCardProps = {
   onRegister?: () => void;
   isRegistered?: boolean;
   registrationCount?: number;
+  onViewRegistrations?: () => void;
 };
 
-export function EventCard({ event, view, onRegister, isRegistered, registrationCount }: EventCardProps) {
+export function EventCard({ event, view, onRegister, isRegistered, registrationCount, onViewRegistrations }: EventCardProps) {
   const eventImage = PlaceHolderImages.find((img) => img.id === 'event-default');
 
   return (
@@ -70,12 +70,20 @@ export function EventCard({ event, view, onRegister, isRegistered, registrationC
           </Button>
         )}
         {view === "hod" && (
-          <div className="flex w-full items-center justify-between text-sm">
-            <span className="font-semibold text-foreground">Registrations</span>
-            <Badge variant="secondary" className="flex items-center gap-2 text-base">
-              <Users className="h-4 w-4" />
-              {registrationCount ?? 0}
-            </Badge>
+          <div className="flex w-full items-center justify-between text-sm gap-2">
+            <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="flex items-center gap-2 text-base">
+                  <Users className="h-4 w-4" />
+                  {registrationCount ?? 0}
+                </Badge>
+                <span className="font-semibold text-foreground">Registrations</span>
+            </div>
+            {onViewRegistrations && (
+              <Button size="sm" variant="outline" onClick={onViewRegistrations} disabled={(registrationCount ?? 0) === 0}>
+                <Eye className="mr-2 h-4 w-4" />
+                View
+              </Button>
+            )}
           </div>
         )}
       </CardFooter>
